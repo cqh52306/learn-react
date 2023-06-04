@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "vite"
+    "dev": "vite --force",
+    "commit": "cz",
+    "prepare": "husky install"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +17,17 @@
     "@babel/plugin-transform-react-jsx": "^7.22.3",
     "@vitejs/plugin-react": "^4.0.0",
     "vite": "^4.3.9"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.6.5",
+    "@commitlint/config-conventional": "^17.6.5",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
