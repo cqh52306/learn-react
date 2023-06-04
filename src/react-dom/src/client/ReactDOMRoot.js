@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 import {
   createContainer,
   updateContainer,
 } from "react-reconciler/src/ReactFiberReconciler";
+=======
+import { createContainer } from "react-reconciler/src/ReactFiberReconciler";
+>>>>>>> cccb67f (feat: fiberRoot)
 
 function ReactDOMRoot(internalRoot) {
   this._internalRoot = internalRoot;
