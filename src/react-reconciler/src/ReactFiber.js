@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 import {
   HostRoot,
   IndeterminateComponent,
   HostComponent,
   HostText,
 } from "./ReactWorkTags";
-=======
-import { HostRoot } from "./ReactWorkTags";
->>>>>>> cccb67f (feat: fiberRoot)
 import { NoFlags } from "./ReactFiberFlags";
 
 /**
