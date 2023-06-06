@@ -6,4 +6,5 @@ let element = (
 );
 const root = createRoot(document.getElementById("root"));
 console.log('root', root);
-// root.render(element)
+// 把element虚拟DOM渲染到容器中
+root.render(element)
