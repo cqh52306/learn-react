@@ -16,6 +16,5 @@ ReactDOMRoot.prototype.render = function render(children) {
 export function createRoot(container) {
   // div#root
   const root = createContainer(container);
-  console.log(root);
   return new ReactDOMRoot(root);
 }

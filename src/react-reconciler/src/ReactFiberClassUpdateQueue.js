@@ -1,4 +1,5 @@
 import { markUpdateLaneFromFiberToRoot } from "./ReactFiberConcurrentUpdates";
+import assign from "shared/assign";
 export const UpdateState = 0;
 export function initializeUpdateQueue(fiber) {
   const queue = {
@@ -28,4 +29,56 @@ export function enqueueUpdate(fiber, update) {
   // 单向循环链表
   updateQueue.shared.pending = update;
   return markUpdateLaneFromFiberToRoot(fiber);
+}
+
+/**
+ * state=0 update=>1 update=2
+ * 根据老状态和更新计算新状态
+ *
+ * @param {*} update 更新的对象其实有很多种类型
+ * @param {*} prevState
+ * @return {*}
+ */
+function getStateFromUpdate(update, prevState) {
+  switch (update.tag) {
+    case UpdateState: {
+      const { payload } = update;
+      const partialState = payload;
+      return assign({}, prevState, partialState);
+    }
+    default:
+      return prevState;
+  }
+}
+
+/**
+ * 根据老状态和更新队列中的更新计算最新的状态
+ *
+ * @export
+ * @param {*} workInProgress 要计算的fiber
+ */
+export function processUpdateQueue(workInProgress) {
+  const queue = workInProgress.updateQueue;
+  const pendingQueue = queue.shared.pending;
+  // 如果有更新，或者说更新队列里有内容
+  if (pendingQueue !== null) {
+    // 清除等待生效的更新
+    queue.shared.pending = null;
+    // 获取更新队列总最后一个更新 update={playload:{element:'h1'}}
+    const lastPendingUpdate = pendingQueue;
+    //指向第一个更新
+    const firstPendingUpdate = lastPendingUpdate.next;
+    // 把更新链表剪开，变成一个单链表
+    lastPendingUpdate.next = null;
+    // 获取老状态 null
+    let newState = workInProgress.memoizedState;
+    let update = firstPendingUpdate;
+    while (update) {
+      // 根据老状态和更新计算新状态
+      newState = getStateFromUpdate(update, newState);
+      update = update.next;
+    }
+    // 把最终计算到的状态赋值给memoizedState
+    workInProgress.memoizedState = newState;
+  }
 }
