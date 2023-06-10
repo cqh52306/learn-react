@@ -16,14 +16,14 @@ import { createRoot } from "react-dom/client";
 function FunctionComponent() {
   return (
     <h1
-      onClick={() => console.log("onClick FunctionComponent")}
-      onClickCapture={() => console.log("onClickCapture FunctionComponent")}
+      onClick={() => console.log("父onClick FunctionComponent")}
+      onClickCapture={() => console.log("父onClickCapture FunctionComponent")}
     >
       hello
       <span
         style={{ color: "red" }}
-        onClick={() => console.log("onClick span")}
-        onClickCapture={() => console.log("onClickCapture span")}
+        onClick={() => console.log("子onClick span")}
+        onClickCapture={() => console.log("子onClickCapture span")}
       >
         world
       </span>
