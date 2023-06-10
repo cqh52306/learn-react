@@ -2,8 +2,20 @@ import { scheduleCallback } from "scheduler";
 import { createWorkInProgress } from "./ReactFiber";
 import { beginWork } from "./ReactFiberBeginWork";
 import { completeWork } from "./ReactFiberCompleteWork";
-import { MutationMask, NoFlags } from "./ReactFiberFlags";
+import {
+  MutationMask,
+  NoFlags,
+  Placement,
+  Update,
+  ChildDeletion,
+} from "./ReactFiberFlags";
 import { commitMutationEffectsOnFiber } from "./ReactFiberCommitWork";
+import {
+  HostComponent,
+  HostRoot,
+  HostText,
+  FunctionComponent,
+} from "./ReactWorkTags";
 let workInProgress = null;
 
 /**
@@ -41,6 +53,7 @@ function performConcurrentWorkOnRoot(root) {
 
 function commitRoot(root) {
   const { finishedWork } = root;
+  printFinishedWork(finishedWork);
   // 判断子树有没有副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
@@ -175,4 +188,20 @@ function completeUnitOfWork(unitOfWork) {
     completedWork = returnFiber;
     workInProgress = completedWork;
   } while (completedWork !== null);
+}
+
+function printFinishedWork(fiber) {
+  let child = fiber.child;
+  while (child) {
+    printFinishedWork(child);
+    child = child.sibling;
+  }
+  if (fiber.flags !== 0) {
+    console.log(
+      getFlags(fiber.flags),
+      getTag(fiber.tag),
+      fiber.type,
+      fiber.memoizedProps
+    );
+  }
 }

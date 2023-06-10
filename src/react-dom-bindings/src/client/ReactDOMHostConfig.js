@@ -21,6 +21,15 @@ export function finalizeInitialChildren(domElement, type, props) {
 export function appendChild(parentInstance, child) {
   parentInstance.appendChild(child);
 }
+
+/**
+ *
+ *
+ * @export
+ * @param {*} parentInstance 父DOM节点
+ * @param {*} child 子DOM节点
+ * @param {*} beforeChild 插入到谁的前面，它也是一个DOM节点
+ */
 export function insertBefore(parentInstance, child, beforeChild) {
   parentInstance.insertBefore(child, beforeChild);
 }

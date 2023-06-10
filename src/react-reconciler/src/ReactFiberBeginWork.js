@@ -1,8 +1,15 @@
-import { HostRoot, HostComponent, HostText } from "./ReactWorkTags";
+import {
+  HostRoot,
+  HostComponent,
+  HostText,
+  IndeterminateComponent,
+  FunctionComponent,
+} from "./ReactWorkTags";
 import { processUpdateQueue } from "./ReactFiberClassUpdateQueue";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { shouldSetTextContent } from "react-dom-bindings/src/client/ReactDOMHostConfig";
 import logger, { indent } from "shared/logger";
+import { renderWithHooks } from "react-reconciler/src/ReactFiberHooks";
 
 /**
  * 根据新的虚拟DOM生成新的fiber链表
@@ -58,6 +65,39 @@ function updateHostComponent(current, workInProgress) {
 }
 
 /**
+ * 挂载函数组件
+ *
+ * @param {*} _current 老fiber
+ * @param {*} workInProgress 新的fiber
+ * @param {*} Component 组件类型，也就是函数组件的定义
+ * @return {*}
+ */
+function mountIndeterminateComponent(_current, workInProgress, Component) {
+  const props = workInProgress.pendingProps;
+  // const value = Component(props);
+  const value = renderWithHooks(_current, workInProgress, Component, props);
+  workInProgress.tag = FunctionComponent;
+  reconcileChildren(_current, workInProgress, value);
+  return workInProgress.child;
+}
+
+function updateFunctionComponent(
+  current,
+  workInProgress,
+  Component,
+  nextProps
+) {
+  const nextChildren = renderWithHooks(
+    current,
+    workInProgress,
+    Component,
+    nextProps
+  );
+  reconcileChildren(current, workInProgress, nextChildren);
+  return workInProgress.child;
+}
+
+/**
  *
  *根据新的虚拟DOM构建新的fiber子链表 child .sibling
  * @export
@@ -69,6 +109,24 @@ export function beginWork(current, workInProgress) {
   indent.number += 2;
   logger(" ".repeat(indent.number) + "beginWork", workInProgress);
   switch (workInProgress.tag) {
+    case IndeterminateComponent: {
+      return mountIndeterminateComponent(
+        current,
+        workInProgress,
+        workInProgress.type
+      );
+    }
+    // 因为在react里组件其实有两种，一种是函数组件，一种是类组件，他们都是函数
+    case FunctionComponent: {
+      const Component = workInProgress.type;
+      const resolvedProps = workInProgress.pendingProps;
+      return updateFunctionComponent(
+        current,
+        workInProgress,
+        Component,
+        resolvedProps
+      );
+    }
     case HostRoot:
       return updateHostRoot(current, workInProgress);
     case HostComponent:
