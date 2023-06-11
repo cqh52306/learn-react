@@ -200,7 +200,7 @@ function printFinishedWork(fiber) {
     console.log(
       getFlags(fiber.flags),
       getTag(fiber.tag),
-      fiber.type,
+      fiber.type.name,
       fiber.memoizedProps
     );
   }

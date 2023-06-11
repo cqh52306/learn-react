@@ -11,6 +11,16 @@ const MouseEventInterface = {
   clientY: 0,
 };
 function createSyntheticEvent(Interface) {
+  /**
+   * 合成事件的基类
+   *
+   * @param {*} reactName React 属性名 onClick
+   * @param {*} reactEventType click
+   * @param {*} targetInst 事件源对应的fiber实例
+   * @param {*} nativeEvent 原生事件对象
+   * @param {*} nativeEventTarget 原生事件源 span 事件源对应的那个真实DOM
+   * @return {*}
+   */
   function SyntheticBaseEvent(
     reactName,
     reactEventType,
@@ -23,13 +33,16 @@ function createSyntheticEvent(Interface) {
     this._targetInst = targetInst;
     this.nativeEvent = nativeEvent;
     this.target = nativeEventTarget;
+    // 把此接口上对应的属性从原生事件上拷贝到合成事件实例上
     for (const propName in Interface) {
       if (!Interface.hasOwnProperty(propName)) {
         continue;
       }
       this[propName] = nativeEvent[propName];
     }
+    // 是否已经阻止默认事件
     this.isDefaultPrevented = functionThatReturnsFalse;
+    // 是否已经阻止继续传播
     this.isPropagationStopped = functionThatReturnsFalse;
     return this;
   }
