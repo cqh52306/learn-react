@@ -21,3 +21,5 @@ function FunctionComponent() {
 let element = <FunctionComponent />;
 const root = createRoot(document.getElementById("root"));
 root.render(element);
+
+//老fiber树 div#root对应的fiber.child=FunctionComponent的fiber.child=button.fiber

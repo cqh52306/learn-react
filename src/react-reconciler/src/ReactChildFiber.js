@@ -4,6 +4,7 @@ import {
   createFiberFromElement,
   FiberNode,
   createFiberFromText,
+  createWorkInProgress,
 } from "./ReactFiber";
 import { Placement } from "./ReactFiberFlags";
 import { HostText } from "./ReactWorkTags";
@@ -15,7 +16,38 @@ import { HostText } from "./ReactWorkTags";
  * @return {*}
  */
 function createChildReconciler(shouldTrackSideEffects) {
+  function useFiber(fiber, pendingProps) {
+    const clone = createWorkInProgress(fiber, pendingProps);
+    clone.index = 0;
+    clone.sibling = null;
+    return clone;
+  }
+  /**
+   *
+   *
+   * @param {*} returnFiber 根fiber div#root对应的fiber
+   * @param {*} currentFirstChild 老的FunctionComponent对应的fiber
+   * @param {*} element 新的虚拟DOM对象
+   * @return {*} 返回新的第一个子fiber
+   */
   function reconcileSingleElement(returnFiber, currentFirstChild, element) {
+    // 新的虚拟DOM的key，也就是唯一标识
+    const key = element.key; // null
+    let child = currentFirstChild; // 老的FunctionComponent对应的fiber
+    while (child !== null) {
+      // 判断此老fiber对应的key和新的虚拟DOM对象的key是否一样 null===nu11
+      if (child.key === key) {
+        const elementType = element.type;
+        //判断老fiber对应的类型和新虚拟DOM元素对应的类型是否相同
+        if (child.type === elementType) {
+          //如果key一样，类型也一样，则认为此节点可以复用
+          const existing = useFiber(child, element.props);
+          existing.return = returnFiber;
+          return existing;
+        }
+      }
+      child = child.sibling;
+    }
     // 因为我们现实的初次挂载，老节点currentFirstFiber肯定是没有的，所以可以直接根据虚拟DOM创建新的Fiber节点
     const created = createFiberFromElement(element);
     created.return = returnFiber;
@@ -23,7 +55,7 @@ function createChildReconciler(shouldTrackSideEffects) {
   }
 
   function placeSingleChild(newFiber) {
-    if (shouldTrackSideEffects) {
+    if (shouldTrackSideEffects && newFiber.alternate === null) {
       // 要在最后的提交阶段插入此节点 react的渲染分为渲染（创建fiber树）和提交（更新真实DOM）两个阶段
       newFiber.flags |= Placement;
     }

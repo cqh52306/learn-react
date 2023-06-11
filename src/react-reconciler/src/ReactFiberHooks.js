@@ -5,6 +5,7 @@ import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
 const { ReactCurrentDispatcher } = ReactSharedInternals;
 let currentlyRenderingFiber = null;
 let workInProgressHook = null;
+let currentHook = null;
 
 /**
  * 挂载构建中的hook
@@ -92,12 +93,77 @@ function useReducer(reducer, initialArg) {
  */
 export function renderWithHooks(current, workInProgress, Component, props) {
   currentlyRenderingFiber = workInProgress; // Function组件对应的fiber
+  //如果有老的fiber,并且有老的hook链表
   if (current !== null && current.memoizedState !== null) {
+    ReactCurrentDispatcher.current = HooksDispatcherOnUpdateInDEV;
   } else {
     ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
   }
   // 需要要函数组件执行前给ReactCurrentDispatcher.current赋值
   const children = Component(props);
   currentlyRenderingFiber = null;
+  workInProgressHook = null;
+  currentHook = null;
   return children;
+}
+
+/**
+ * 构建新hook
+ *
+ * @return {*}
+ */
+function updateWorkInProgressHook() {
+  // 获取将要构建的新的hook的老hook
+  if (currentHook === null) {
+    const current = currentlyRenderingFiber.alternate;
+    currentHook = current.memoizedState;
+  } else {
+    currentHook = currentHook.next;
+  }
+  // 根据老hook创建新hook
+  const newHook = {
+    memoizedState: currentHook.memoizedState,
+    queue: currentHook.queue,
+    next: null,
+  };
+  if (workInProgressHook === null) {
+    currentlyRenderingFiber.memoizedState = workInProgressHook = newHook;
+  } else {
+    workInProgressHook = workInProgressHook.next = newHook;
+  }
+  return workInProgressHook;
+}
+
+const HooksDispatcherOnUpdateInDEV = {
+  useReducer: updateReducer,
+};
+
+function updateReducer(reducer) {
+  //获取新的hook
+  const hook = updateWorkInProgressHook();
+  //获取新的hook的更新队列
+  const queue = hook.queue;
+  queue.lastRenderedReducer = reducer;
+  //获取老的hook
+  const current = currentHook;
+  //获取将要生效的更新队列
+  const pendingQueue = queue.pending;
+  //初始化一个新的状态，取值为当前的状态
+  let newState = current.memoizedState;
+  if (pendingQueue !== null) {
+    queue.pending = null;
+    const first = pendingQueue.next;
+    let update = first;
+    do {
+      if (update.hasEagerState) {
+        newState = update.eagerState;
+      } else {
+        const action = update.action;
+        newState = reducer(newState, action);
+      }
+      update = update.next;
+    } while (update !== null && update !== first);
+  }
+  hook.memoizedState = queue.lastRenderedState = newState;
+  return [hook.memoizedState, queue.dispatch];
 }
