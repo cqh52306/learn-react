@@ -14,6 +14,7 @@ export function getClosestInstanceFromNode(targetNode) {
   if (targetInst) {
     return targetInst;
   }
+  //如果真实OOM上没有fiber,就不要返回undefined,而是要返回null
   return null;
 }
 

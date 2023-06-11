@@ -10,6 +10,7 @@ import {
   ChildDeletion,
 } from "./ReactFiberFlags";
 import { commitMutationEffectsOnFiber } from "./ReactFiberCommitWork";
+import { finishQueueingConcurrentUpdates } from "./ReactFiberConcurrentUpdates";
 import {
   HostComponent,
   HostRoot,
@@ -17,6 +18,7 @@ import {
   FunctionComponent,
 } from "./ReactWorkTags";
 let workInProgress = null;
+let workInProgressRoot = null;
 
 /**
  * 计划更新root
@@ -30,6 +32,9 @@ export function scheduleUpdateOnFiber(root) {
 }
 
 function ensureRootIsScheduled(root) {
+  if (workInProgressRoot) return;
+  workInProgressRoot = root;
+  console.log("ensureRootIsScheduled");
   // 告诉浏览器要执行此函数 performConcurrentWorkOnRoot
   scheduleCallback(performConcurrentWorkOnRoot.bind(null, root));
 }
@@ -49,11 +54,13 @@ function performConcurrentWorkOnRoot(root) {
   console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
   root.finishedWork = finishedWork;
   commitRoot(root);
+  workInProgressRoot = null;
 }
 
 function commitRoot(root) {
   const { finishedWork } = root;
   printFinishedWork(finishedWork);
+  console.log(`~~~~~~~~~~~~~~~~~~~~~2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
   // 判断子树有没有副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
@@ -135,7 +142,7 @@ function getFlags(flags) {
 
 function prepareFreshStack(root) {
   workInProgress = createWorkInProgress(root.current, null);
-  console.log(workInProgress);
+  finishQueueingConcurrentUpdates();
 }
 
 function renderRootSync(root) {

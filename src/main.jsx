@@ -1,46 +1,23 @@
+import * as React from "react";
 import { createRoot } from "react-dom/client";
-// let element = (
-//   <h1 id="container">
-//     hello<span style={{ color: "red" }}>world</span>
-//   </h1>
-// );
-
-// function FunctionComponent() {
-//   return (
-//     <h1>
-//       hello<span style={{ color: "red" }}>world</span>
-//     </h1>
-//   );
-// }
-
+const reducer = (state, action) => {
+  if (action.type === "add") return state + action.payload;
+  return state;
+};
 function FunctionComponent() {
+  const [number, setNumber] = React.useReducer(reducer, 0);
   return (
-    <h1
-      onClick={(e) =>
-        console.log("父onClick FunctionComponent", e.currentTarget)
-      }
-      onClickCapture={(e) =>
-        console.log("父onClickCapture FunctionComponent", e.currentTarget)
-      }
+    <button
+      onClick={() => {
+        setNumber({ type: "add", payload: 1 }); // update1=>update2=>update3=>update1
+        setNumber({ type: "add", payload: 2 }); //update2
+        setNumber({ type: "add", payload: 3 }); //update3
+      }}
     >
-      hello
-      <span
-        style={{ color: "red" }}
-        onClick={(e) => console.log("子onClick span", e.currentTarget)}
-        onClickCapture={(e) =>
-          console.log("子onClickCapture span", e.currentTarget)
-        }
-      >
-        world
-      </span>
-    </h1>
+      {number}
+    </button>
   );
 }
-
 let element = <FunctionComponent />;
-
-//old let element = React.createElement(FunctionComponent);//new let element = jsx(FunctionComponent);
-
 const root = createRoot(document.getElementById("root"));
-// 把element虚拟DOM渲染到容器中
 root.render(element);
