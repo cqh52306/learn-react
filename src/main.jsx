@@ -1,40 +1,32 @@
+import * as React from "react";
 import { createRoot } from "react-dom/client";
-// let element = (
-//   <h1 id="container">
-//     hello<span style={{ color: "red" }}>world</span>
-//   </h1>
-// );
-
-// function FunctionComponent() {
-//   return (
-//     <h1>
-//       hello<span style={{ color: "red" }}>world</span>
-//     </h1>
-//   );
-// }
-
+const reducer = (state, action) => {
+  if (action.type === "add") return state + action.payload;
+  return state;
+};
 function FunctionComponent() {
+  const [number, setNumber] = React.useReducer(reducer, 0);
+  let attrs = { id: "btn" };
+  if (number === 6) {
+    delete attrs.id;
+    attrs.style = { color: "red" };
+  }
+  console.log("number", number);
   return (
-    <h1
-      onClick={() => console.log("父onClick FunctionComponent")}
-      onClickCapture={() => console.log("父onClickCapture FunctionComponent")}
+    <button
+      {...attrs}
+      onClick={() => {
+        setNumber({ type: "add", payload: 1 }); // update1=>update2=>update3=>update1
+        setNumber({ type: "add", payload: 2 }); //update2
+        setNumber({ type: "add", payload: 3 }); //update3
+      }}
     >
-      hello
-      <span
-        style={{ color: "red" }}
-        onClick={() => console.log("子onClick span")}
-        onClickCapture={() => console.log("子onClickCapture span")}
-      >
-        world
-      </span>
-    </h1>
+      {number}
+    </button>
   );
 }
-
 let element = <FunctionComponent />;
-
-//old let element = React.createElement(FunctionComponent);//new let element = jsx(FunctionComponent);
-
 const root = createRoot(document.getElementById("root"));
-// 把element虚拟DOM渲染到容器中
 root.render(element);
+
+//老fiber树 div#root对应的fiber.child=FunctionComponent的fiber.child=button.fiber

@@ -48,13 +48,6 @@ export function dispatchEvent(
   targetContainer,
   nativeEvent
 ) {
-  console.log(
-    "dispatchEvent",
-    domEventName,
-    eventSystemFlags,
-    targetContainer,
-    nativeEvent
-  );
   // 获取事件源，它是一个真实DOM
   const nativeEventTarget = getEventTarget(nativeEvent);
   const targetInst = getClosestInstanceFromNode(nativeEventTarget);

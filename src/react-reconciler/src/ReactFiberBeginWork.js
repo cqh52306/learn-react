@@ -107,7 +107,7 @@ function updateFunctionComponent(
  */
 export function beginWork(current, workInProgress) {
   indent.number += 2;
-  logger(" ".repeat(indent.number) + "beginWork", workInProgress);
+  // logger(" ".repeat(indent.number) + "beginWork", workInProgress);
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
       return mountIndeterminateComponent(

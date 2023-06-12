@@ -1,4 +1,8 @@
-import { setInitialProperties } from "./ReactDOMComponent";
+import {
+  setInitialProperties,
+  diffProperties,
+  updateProperties,
+} from "./ReactDOMComponent";
 import { precacheFiberNode, updateFiberProps } from "./ReactDOMComponentTree";
 
 export function shouldSetTextContent(type, props) {
@@ -9,6 +13,15 @@ export function shouldSetTextContent(type, props) {
 export const appendInitialChild = (parent, child) => {
   parent.appendChild(child);
 };
+
+/**
+ * 在原生组件初次挂载的时候， 会通过此方法创建真实DOM
+ *
+ * @export
+ * @param {*} type 类型 span
+ * @param {*} props 属性
+ * @param {*} internalInstanceHandle 对应的fiber
+ */
 export const createInstance = (type, props, internalInstanceHandle) => {
   const domElement = document.createElement(type);
   precacheFiberNode(internalInstanceHandle, domElement);
@@ -37,4 +50,19 @@ export function appendChild(parentInstance, child) {
  */
 export function insertBefore(parentInstance, child, beforeChild) {
   parentInstance.insertBefore(child, beforeChild);
+}
+
+export function prepareUpdate(domElement, type, oldProps, newProps) {
+  return diffProperties(domElement, type, oldProps, newProps);
+}
+
+export function commitUpdate(
+  domElement,
+  updatePayload,
+  type,
+  oldProps,
+  newProps
+) {
+  updateProperties(domElement, updatePayload, type, oldProps, newProps);
+  updateFiberProps(domElement, newProps);
 }

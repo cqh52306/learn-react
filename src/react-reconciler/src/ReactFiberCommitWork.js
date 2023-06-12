@@ -4,10 +4,11 @@ import {
   HostText,
   FunctionComponent,
 } from "./ReactWorkTags";
-import { MutationMask, Placement } from "./ReactFiberFlags";
+import { MutationMask, Placement, Update } from "./ReactFiberFlags";
 import {
   insertBefore,
   appendChild,
+  commitUpdate,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
 
 function recursivelyTraverseMutationEffects(root, parentFiber) {
@@ -115,7 +116,6 @@ function getHostSibling(fiber) {
  * @param {*} finishedWork
  */
 function commitPlacement(finishedWork) {
-  console.log("commitPlacement", finishedWork);
   const parentFiber = getHostParentFiber(finishedWork);
   switch (parentFiber.tag) {
     case HostComponent: {
@@ -155,10 +155,53 @@ function commitReconciliationEffects(finishedWork) {
  * @param {*} root 根节点
  */
 export function commitMutationEffectsOnFiber(finishedWork, root) {
+  const current = finishedWork.alternate;
+  const flags = finishedWork.flags;
   switch (finishedWork.tag) {
-    case FunctionComponent:
-    case HostRoot:
-    case HostComponent:
+    case HostRoot: {
+      // 先遍历他们的子节点，处理他们的子节点上的副作用
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      // 再处理自己身上的副作用
+      commitReconciliationEffects(finishedWork);
+      break;
+    }
+    case FunctionComponent: {
+      // 先遍历他们的子节点，处理他们的子节点上的副作用
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      // 再处理自己身上的副作用
+      commitReconciliationEffects(finishedWork);
+      break;
+    }
+    case HostComponent: {
+      // 先遍历他们的子节点，处理他们的子节点上的副作用
+      recursivelyTraverseMutationEffects(root, finishedWork);
+      // 再处理自己身上的副作用
+      commitReconciliationEffects(finishedWork);
+      // 处理DOM更新
+      if (flags & Update) {
+        // 获取真实DOM
+        const instance = finishedWork.stateNode;
+        // 更新真实DOM
+        if (instance != null) {
+          const newProps = finishedWork.memoizedProps;
+          const oldProps = current !== null ? current.memoizedProps : newProps;
+          const type = finishedWork.type;
+          const updatePayload = finishedWork.updateQueue;
+          finishedWork.updateQueue = null;
+          if (updatePayload !== null) {
+            commitUpdate(
+              instance,
+              updatePayload,
+              type,
+              oldProps,
+              newProps,
+              finishedWork
+            );
+          }
+        }
+      }
+      break;
+    }
     case HostText: {
       // 先遍历他们的子节点，处理他们的子节点上的副作用
       recursivelyTraverseMutationEffects(root, finishedWork);

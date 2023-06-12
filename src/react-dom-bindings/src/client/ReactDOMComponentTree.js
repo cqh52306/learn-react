@@ -14,6 +14,7 @@ export function getClosestInstanceFromNode(targetNode) {
   if (targetInst) {
     return targetInst;
   }
+  //如果真实OOM上没有fiber,就不要返回undefined,而是要返回null
   return null;
 }
 
@@ -25,8 +26,8 @@ export function getFiberCurrentPropsFromNode(node) {
  * 提前缓存fiber节点的实例到DOM节点上
  *
  * @export
- * @param {*} hostInst
- * @param {*} node
+ * @param {*} hostInst fiber实例
+ * @param {*} node 真实DOM
  */
 export function precacheFiberNode(hostInst, node) {
   node[internalInstanceKey] = hostInst;
