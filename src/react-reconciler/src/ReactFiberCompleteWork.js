@@ -5,7 +5,12 @@ import {
   finalizeInitialChildren,
   prepareUpdate,
 } from "react-dom-bindings/src/client/ReactDOMHostConfig";
-import { HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import {
+  HostComponent,
+  HostRoot,
+  HostText,
+  FunctionComponent,
+} from "./ReactWorkTags";
 import { NoFlags, Update } from "./ReactFiberFlags";
 import logger, { indent } from "shared/logger";
 
@@ -76,10 +81,10 @@ function updateHostComponent(current, workInProgress, type, newProps) {
   const oldProps = current.memoizedProps; //老的属性
   const instance = workInProgress.stateNode; //老的DOM节点
   //比较新老属性，收集属性的差异
-  // const updatePayload = prepareUpdate(instance, type, oldProps, newProps);
-  const updatePayload = ["children", 6];
+  const updatePayload = prepareUpdate(instance, type, oldProps, newProps);
   //让原生组件的新fiber更新队列等于[]
   workInProgress.updateQueue = updatePayload;
+  console.log("updatePayload", updatePayload);
   if (updatePayload) {
     markUpdate(workInProgress);
   }
@@ -93,7 +98,7 @@ function updateHostComponent(current, workInProgress, type, newProps) {
  */
 export function completeWork(current, workInProgress) {
   indent.number -= 2;
-  logger(" ".repeat(indent.number) + "completeWork", workInProgress);
+  // logger(" ".repeat(indent.number) + "completeWork", workInProgress);
   const newProps = workInProgress.pendingProps;
   switch (workInProgress.tag) {
     // 原生节点
@@ -104,7 +109,6 @@ export function completeWork(current, workInProgress) {
       // 如果老fiber存在，并且老fiber上真实DOM节点，要走节点更新的逻辑
       if (current !== null && workInProgress.stateNode != null) {
         updateHostComponent(current, workInProgress, type, newProps);
-        console.log("updatePayload", workInProgress.updateQueue);
       } else {
         const instance = createInstance(type, newProps, workInProgress);
         // 把自己的所有儿子都挂载到自己身上
@@ -117,6 +121,9 @@ export function completeWork(current, workInProgress) {
       bubbleProperties(workInProgress);
       break;
     }
+    case FunctionComponent:
+      bubbleProperties(workInProgress);
+      break;
     case HostRoot:
       bubbleProperties(workInProgress);
       break;

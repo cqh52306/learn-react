@@ -6,8 +6,15 @@ const reducer = (state, action) => {
 };
 function FunctionComponent() {
   const [number, setNumber] = React.useReducer(reducer, 0);
+  let attrs = { id: "btn" };
+  if (number === 6) {
+    delete attrs.id;
+    attrs.style = { color: "red" };
+  }
+  console.log("number", number);
   return (
     <button
+      {...attrs}
       onClick={() => {
         setNumber({ type: "add", payload: 1 }); // update1=>update2=>update3=>update1
         setNumber({ type: "add", payload: 2 }); //update2

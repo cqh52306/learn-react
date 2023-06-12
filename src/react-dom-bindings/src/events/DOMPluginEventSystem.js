@@ -18,7 +18,6 @@ export function listenToAllSupportedEvents(rootContainerElement) {
     rootContainerElement[listeningMarker] = true;
     // 遍历所有的原生的事件比如click，进行监听
     allNativeEvents.forEach((domEventName) => {
-      console.log(domEventName);
       listenToNativeEvent(domEventName, true, rootContainerElement);
       listenToNativeEvent(domEventName, false, rootContainerElement);
     });
@@ -103,7 +102,6 @@ function dispatchEventsForPlugins(
     eventSystemFlags,
     targetContainer
   );
-  console.log("dispatchQueue", dispatchQueue);
   processDispatchQueue(dispatchQueue, eventSystemFlags);
 }
 

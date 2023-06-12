@@ -35,7 +35,6 @@ function mountWorkInProgressHook() {
  * @param {*} action 派发的动作
  */
 function dispatchReducerAction(fiber, queue, action) {
-  console.log("dispatchReducerAction", fiber, queue, action);
   //在每个hook里会存放一个更新队列，更新队列是一个更新对象的循环链表update1.next=update2.next=update1
   const update = {
     action, //{ type: 'add', payload: 1 } 派发的动作
@@ -50,22 +49,6 @@ const HooksDispatcherOnMountInDEV = {
 };
 
 function mountReducer(reducer, initialArg) {
-  const hook = mountWorkInProgressHook();
-  hook.memoizedState = initialArg;
-  const queue = {
-    pending: null,
-    dispatch: null,
-  };
-  hook.queue = queue;
-  const dispatch = (queue.dispatch = dispatchReducerAction.bind(
-    null,
-    currentlyRenderingFiber,
-    queue
-  ));
-  return [hook.memoizedState, dispatch];
-}
-
-function useReducer(reducer, initialArg) {
   const hook = mountWorkInProgressHook();
   hook.memoizedState = initialArg;
   const queue = {
@@ -155,12 +138,14 @@ function updateReducer(reducer) {
     const first = pendingQueue.next;
     let update = first;
     do {
-      if (update.hasEagerState) {
-        newState = update.eagerState;
-      } else {
-        const action = update.action;
-        newState = reducer(newState, action);
-      }
+      // if (update.hasEagerState) {
+      //   newState = update.eagerState;
+      // } else {
+      //   const action = update.action;
+      //   newState = reducer(newState, action);
+      // }
+      const action = update.action;
+      newState = reducer(newState, action);
       update = update.next;
     } while (update !== null && update !== first);
   }

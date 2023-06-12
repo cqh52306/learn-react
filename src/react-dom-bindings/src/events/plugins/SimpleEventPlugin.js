@@ -40,7 +40,6 @@ function extractEvents(
     nativeEvent.type,
     inCapturePhase
   );
-  console.log(listeners.length);
   // 如果有要执行的监听函数的话[onclickCapture,onclickCapture]=[ChildCapture,ParentCapture]
   if (listeners.length > 0) {
     const event = new SyntheticEventCtor(
