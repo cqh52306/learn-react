@@ -1,6 +1,7 @@
 import ReactSharedInternals from "shared/ReactSharedInternals";
 import { enqueueConcurrentHookUpdate } from "./ReactFiberConcurrentUpdates";
 import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
+import is from "shared/objectIs";
 
 const { ReactCurrentDispatcher } = ReactSharedInternals;
 let currentlyRenderingFiber = null;
@@ -46,6 +47,7 @@ function dispatchReducerAction(fiber, queue, action) {
 }
 const HooksDispatcherOnMountInDEV = {
   useReducer: mountReducer,
+  useState: mountState,
 };
 
 function mountReducer(reducer, initialArg) {
@@ -90,6 +92,48 @@ export function renderWithHooks(current, workInProgress, Component, props) {
   return children;
 }
 
+function mountState(initialState) {
+  const hook = mountWorkInProgressHook();
+  hook.memoizedState = hook.baseState = initialState;
+  const queue = {
+    pending: null,
+    dispatch: null,
+    lastRenderedReducer: basicStateReducer, // 上一个reducer
+    lastRenderedState: initialState, // 上一个state
+  };
+  hook.queue = queue;
+  const dispatch = (queue.dispatch = dispatchSetState.bind(
+    null,
+    currentlyRenderingFiber,
+    queue
+  ));
+  return [hook.memoizedState, dispatch];
+}
+
+function dispatchSetState(fiber, queue, action) {
+  const update = {
+    action,
+    hasEagerState: false, //是否有急切的更新
+    eagerState: null, //急切的更新状态
+    next: null,
+  };
+  //当你派发动作后，我立刻用上一次的状态和上一次的reducer计算新状态
+  const lastRenderedReducer = queue.lastRenderedReducer;
+  const currentState = queue.lastRenderedState;
+  const eagerState = lastRenderedReducer(currentState, action);
+  update.hasEagerState = true;
+  update.eagerState = eagerState;
+  if (is(eagerState, currentState)) {
+    return;
+  }
+  //下面是真正的入队更新，并调度更新逻辑
+  const root = enqueueConcurrentHookUpdate(fiber, queue, update);
+  scheduleUpdateOnFiber(root, fiber);
+}
+function updateState(initialState) {
+  return updateReducer(basicStateReducer, initialState);
+}
+
 /**
  * 构建新hook
  *
@@ -119,7 +163,12 @@ function updateWorkInProgressHook() {
 
 const HooksDispatcherOnUpdateInDEV = {
   useReducer: updateReducer,
+  useState: updateState,
 };
+
+function basicStateReducer(state, action) {
+  return typeof action === "function" ? action(state) : action;
+}
 
 function updateReducer(reducer) {
   //获取新的hook

@@ -58,6 +58,13 @@ export function createHostRootFiber() {
 //这是延迟创建的，以避免分配从未更新的内容的额外对象。它还允许我们如果需要，回收额外的内存
 /**
  * 基于老fiber和新的属性创建新fiber
+ * 1.current和workInProgress不是一个对象
+ * 2.workInProgress
+ * 2.1有两种情况，一种是没有，创建一个新，互相通过alternate指向
+ * 2.2 存在alternate,直接复用老的alternate就可以了
+ * 复用有两层含义
+ *  1.复用老的fiber对象
+ *  2.复用老的真实DOM
  * @param {*} current 老fiber
  * @param {*} pendingProps 新属性
  * @returns
