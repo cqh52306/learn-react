@@ -6,7 +6,7 @@ import {
   createFiberFromText,
   createWorkInProgress,
 } from "./ReactFiber";
-import { Placement } from "./ReactFiberFlags";
+import { Placement, ChildDeletion } from "./ReactFiberFlags";
 import { HostText } from "./ReactWorkTags";
 
 /**
@@ -22,6 +22,32 @@ function createChildReconciler(shouldTrackSideEffects) {
     clone.sibling = null;
     return clone;
   }
+
+  function deleteChild(returnFiber, childToDelete) {
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+    const deletions = returnFiber.deletions;
+    if (deletions === null) {
+      returnFiber.deletions = [childToDelete];
+      returnFiber.flags |= ChildDeletion;
+    } else {
+      deletions.push(childToDelete);
+    }
+  }
+
+  function deleteRemainingChildren(returnFiber, currentFirstChild) {
+    if (!shouldTrackSideEffects) {
+      return null;
+    }
+    let childToDelete = currentFirstChild;
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, childToDelete);
+      childToDelete = childToDelete.sibling;
+    }
+    return null;
+  }
+
   /**
    *
    *
@@ -40,11 +66,16 @@ function createChildReconciler(shouldTrackSideEffects) {
         const elementType = element.type;
         //判断老fiber对应的类型和新虚拟DOM元素对应的类型是否相同
         if (child.type === elementType) {
+          deleteRemainingChildren(returnFiber, child.sibling);
           //如果key一样，类型也一样，则认为此节点可以复用
           const existing = useFiber(child, element.props);
           existing.return = returnFiber;
           return existing;
         }
+        deleteRemainingChildren(returnFiber, child);
+        break;
+      } else {
+        deleteChild(returnFiber, child);
       }
       child = child.sibling;
     }

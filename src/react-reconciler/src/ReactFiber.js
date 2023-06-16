@@ -38,6 +38,7 @@ export function FiberNode(tag, pendingProps, key) {
   this.flags = NoFlags;
   // 自己点对应的副作用标识
   this.subtreeFlags = NoFlags;
+  this.deletions = null;
   // 轮替
   this.alternate = null;
 }

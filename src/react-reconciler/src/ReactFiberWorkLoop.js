@@ -56,7 +56,7 @@ function performConcurrentWorkOnRoot(root) {
 
 function commitRoot(root) {
   const { finishedWork } = root;
-  // printFinishedWork(finishedWork);
+  printFinishedWork(finishedWork);
   // 判断子树有没有副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
@@ -71,20 +71,20 @@ function commitRoot(root) {
 
 function printFiber(fiber) {
   /*
-    fiber.flags &= ~Forked;
-    fiber.flags &= ~PlacementDEV;
-    fiber.flags &= ~Snapshot;
-    fiber.flags &= ~PerformedWork;
-    */
+  fiber.flags &= ~Forked;
+  fiber.flags &= ~PlacementDEV;
+  fiber.flags &= ~Snapshot;
+  fiber.flags &= ~PerformedWork;
+  */
   if (fiber.flags !== 0) {
-    // console.log(
-    //   getFlags(fiber.flags),
-    //   getTag(fiber.tag),
-    //   typeof fiber.type === "function" ? fiber.type.name : fiber.type,
-    //   fiber.memoizedProps
-    // );
+    console.log(
+      getFlags(fiber.flags),
+      getTag(fiber.tag),
+      typeof fiber.type === "function" ? fiber.type.name : fiber.type,
+      fiber.memoizedProps
+    );
     if (fiber.deletions) {
-      for (let i = 0; i < fiber.deletions.length; i) {
+      for (let i = 0; i < fiber.deletions.length; i++) {
         const childToDelete = fiber.deletions[i];
         console.log(
           getTag(childToDelete.tag),
@@ -100,6 +100,7 @@ function printFiber(fiber) {
     child = child.sibling;
   }
 }
+
 function getTag(tag) {
   switch (tag) {
     case FunctionComponent:
@@ -122,7 +123,7 @@ function getFlags(flags) {
     return `自己有更新和子元素有删除`;
   }
   if (flags === ChildDeletion) {
-    return `子元素有删除`;
+    return "子节点有删除";
   }
   if (flags === (Placement | Update)) {
     return `移动并更新`;
@@ -203,7 +204,7 @@ function printFinishedWork(fiber) {
     console.log(
       getFlags(fiber.flags),
       getTag(fiber.tag),
-      fiber.type.name,
+      typeof fiber.type === "function" ? fiber.type.name : fiber.type,
       fiber.memoizedProps
     );
   }
