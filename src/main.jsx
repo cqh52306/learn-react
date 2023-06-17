@@ -34,19 +34,59 @@ function FunctionComponent() {
   //   </p>
   // );
   /*27.原来多个节点，现在只有一个节点*/
+  // return number === 0 ? (
+  //   <ul key="container" onClick={() => setNumber(number + 1)}>
+  //     <li key="A">A</li>
+  //     <li key="B" id="B">
+  //       B
+  //     </li>
+  //     <li key="C">C</li>
+  //   </ul>
+  // ) : (
+  //   <ul key="container" onClick={() => setNumber(number + 1)}>
+  //     <li key="B" id="B2">
+  //       B2
+  //     </li>
+  //   </ul>
+  // );
+  /*多节点*/
+  // return number === 0 ? (
+  //   <ul key="container" onClick={() => setNumber(number + 1)}>
+  //     <li key="A">A</li>
+  //     <li key="B" id="B">
+  //       B
+  //     </li>
+  //     <li key="C" id="C">
+  //       C
+  //     </li>
+  //   </ul>
+  // ) : (
+  //   <ul key="container" onClick={() => setNumber(number + 1)}>
+  //     <li key="A">A2</li>
+  //     <p key="B" id="B2">
+  //       B2
+  //     </p>
+  //     <li key="C" id="C2">
+  //       C2
+  //     </li>
+  //   </ul>
+  // );
   return number === 0 ? (
     <ul key="container" onClick={() => setNumber(number + 1)}>
       <li key="A">A</li>
       <li key="B" id="B">
         B
       </li>
-      <li key="C">C</li>
+      <li key="C" id="C">
+        C
+      </li>
     </ul>
   ) : (
     <ul key="container" onClick={() => setNumber(number + 1)}>
-      <li key="B" id="B2">
+      <li key="A">A2</li>
+      <p key="B" id="B2">
         B2
-      </li>
+      </p>
     </ul>
   );
 }

@@ -122,10 +122,22 @@ function createChildReconciler(shouldTrackSideEffects) {
     }
     return null;
   }
+
   function placeChild(newFiber, newIndex) {
+    //指定新的fiber在新的挂载索引
     newFiber.index = newIndex;
-    if (shouldTrackSideEffects) {
+    //如果不需要跟踪副作用
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+    //获取它的老fiber
+    const current = newFiber.alternate;
+    //如果有，说明这是一个更新的节点，有老的真实DOM。
+    if (current !== null) {
+      return;
+    } else {
       /*
+       * //如果没有，说明这是一个新的节点，需要插入
        * 如果一个fiber他的flags上有placement，说明此节点需要创建真实DOM并且插入到父容器中
        * 如果父fiber节点是初次挂载，shouldTrackSideEffects=false,不需要添加flags
        * 这种情况下会在完成阶段把所有的子节点全部添加到自己身上
@@ -133,26 +145,92 @@ function createChildReconciler(shouldTrackSideEffects) {
       newFiber.flags |= Placement;
     }
   }
+  function updateElement(returnFiber, current, element) {
+    const elementType = element.type;
+    if (current !== null) {
+      // 判断是否类型一样，则表示key和type都一样，可以复用老的fiber和真实DOM
+      if (current.type === elementType) {
+        const existing = useFiber(current, element.props);
+        existing.return = returnFiber;
+        return existing;
+      }
+    }
+    const created = createFiberFromElement(element);
+    created.return = returnFiber;
+    return created;
+  }
+
+  function updateSlot(returnFiber, oldFiber, newChild) {
+    const key = oldFiber !== null ? oldFiber.key : null;
+    if (typeof newChild === "object" && newChild !== null) {
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE: {
+          // 如果key一样，进入更新元素的逻辑
+          if (newChild.key === key) {
+            return updateElement(returnFiber, oldFiber, newChild);
+          }
+        }
+        default:
+          return null;
+      }
+      return null;
+    }
+  }
 
   function reconcileChildrenArray(returnFiber, currentFirstChild, newChildren) {
     let resultingFirstChild = null; // 返回的第一个新儿子
     let previousNewFiber = null; // 上一个的一个新fiber
-    let newIdx = 0;
-    for (; newIdx < newChildren.length; newIdx++) {
-      const newFiber = createChild(returnFiber, newChildren[newIdx]);
+    let newIdx = 0; //用来遍历新的虚拟DOM的索引
+    let oldFiber = currentFirstChild; //第一个老fiber
+    let nextOldFiber = null; //下一个第fiber
+    // 开始第一轮循环 如果老fiber有值，新的虚拟DOM也有值
+    for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
+      //先暂下一个老fiber
+      nextOldFiber = oldFiber.sibling;
+      //试图更新或者试图复用老的fiber
+      const newFiber = updateSlot(returnFiber, oldFiber, newChildren[newIdx]);
       if (newFiber === null) {
-        continue;
+        break;
       }
+      if (shouldTrackSideEffects) {
+        //如果有老fiber,但是新的fiber并没有成功复用老fiber和老的真实DOM，那就删除老fiber,在提交阶段会删除真实DOM
+        if (oldFiber && newFiber.alternate === null) {
+          deleteChild(returnFiber, oldFiber);
+        }
+      }
+      //指定新fiber的位置
       placeChild(newFiber, newIdx);
-      // 如果previousNewFiber为null，说明这是第一个fiber
       if (previousNewFiber === null) {
-        resultingFirstChild = newFiber; // 这个newFiber就是大儿子
+        resultingFirstChild = newFiber; //li(A).sibling=p(B).sibling=>li(C)
       } else {
-        // 说明这不是大儿子，则吧这个newFiber添加上一个子节点后面
         previousNewFiber.sibling = newFiber;
       }
-      // 让newFiber成为最后一个或者上一个子fiber
       previousNewFiber = newFiber;
+      oldFiber = nextOldFiber;
+    }
+    //新的虚拟DOM已经循环完毕，3=>2
+    if (newIdx === newChildren.length) {
+      //删除剩下的老fiber
+      deleteRemainingChildren(returnFiber, oldFiber);
+      return resultingFirstChild;
+    }
+    if (oldFiber === null) {
+      for (; newIdx < newChildren.length; newIdx++) {
+        const newFiber = createChild(returnFiber, newChildren[newIdx]);
+        if (newFiber === null) {
+          continue;
+        }
+        placeChild(newFiber, newIdx);
+        // 如果previousNewFiber为null，说明这是第一个fiber
+        if (previousNewFiber === null) {
+          resultingFirstChild = newFiber; // 这个newFiber就是大儿子
+        } else {
+          // 说明这不是大儿子，则吧这个newFiber添加上一个子节点后面
+          previousNewFiber.sibling = newFiber;
+        }
+        // 让newFiber成为最后一个或者上一个子fiber
+        previousNewFiber = newFiber;
+      }
     }
     return resultingFirstChild;
   }
