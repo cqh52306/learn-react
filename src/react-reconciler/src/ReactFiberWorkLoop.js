@@ -8,8 +8,14 @@ import {
   Placement,
   Update,
   ChildDeletion,
+  Passive,
 } from "./ReactFiberFlags";
-import { commitMutationEffectsOnFiber } from "./ReactFiberCommitWork";
+import {
+  commitMutationEffectsOnFiber, //执行DOM操作
+  commitMutationEffects,
+  commitPassiveUnmountEffects, //执行destroy
+  commitPassiveMountEffects, //执行create
+} from "./ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "./ReactFiberConcurrentUpdates";
 import {
   HostComponent,
@@ -19,6 +25,11 @@ import {
 } from "./ReactWorkTags";
 let workInProgress = null;
 let workInProgressRoot = null;
+
+//此根节点上有没有useEffect类似的副作用
+let rootDoesHavePassiveEffects = false;
+//具有useEffect副作用的根节点 FiberRootNode,根fiber.stateNode
+let rootWithPendingPassiveEffects = null;
 
 /**
  * 计划更新root
@@ -38,6 +49,16 @@ function ensureRootIsScheduled(root) {
   scheduleCallback(performConcurrentWorkOnRoot.bind(null, root));
 }
 
+export function flushPassiveEffects() {
+  if (rootWithPendingPassiveEffects !== null) {
+    const root = rootWithPendingPassiveEffects;
+    //执行卸载副作用，destroy
+    commitPassiveUnmountEffects(root.current);
+    //执行挂载副作用 create
+    commitPassiveMountEffects(root, root.current);
+  }
+}
+
 /**
  * 根据fiber构件fiber树，要创建真实的DOM节点，还要把真实的DOM节点插入容器
  *
@@ -55,15 +76,32 @@ function performConcurrentWorkOnRoot(root) {
 }
 
 function commitRoot(root) {
+  // 先获取新的构建好的fiber树的根fiber tag=3
   const { finishedWork } = root;
   printFinishedWork(finishedWork);
+  if (
+    (finishedWork.subtreeFlags & Passive) !== NoFlags ||
+    (finishedWork.flags & Passive) !== NoFlags
+  ) {
+    if (!rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = true;
+      scheduleCallback(flushPassiveEffects);
+    }
+  }
   // 判断子树有没有副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
   const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
   // 如果自己的副作用或者子节点有副作用就进行提交DOM操作
   if (subtreeHasEffects || rootHasEffect) {
+    //当DOM执行变更之后
     commitMutationEffectsOnFiber(finishedWork, root);
+    commitMutationEffects(finishedWork, root);
+    root.current = finishedWork;
+    if (rootDoesHavePassiveEffects) {
+      rootDoesHavePassiveEffects = false;
+      rootWithPendingPassiveEffects = root;
+    }
   }
   // 等DOM变更后，就可以让root的current指向新的fiber树
   root.current = finishedWork;
