@@ -4,7 +4,13 @@ import {
   HostText,
   FunctionComponent,
 } from "./ReactWorkTags";
-import { MutationMask, Placement, Update, Passive } from "./ReactFiberFlags";
+import {
+  MutationMask,
+  Placement,
+  Update,
+  Passive,
+  LayoutMask,
+} from "./ReactFiberFlags";
 import {
   insertBefore,
   appendChild,
@@ -14,6 +20,7 @@ import {
 import {
   HasEffect as HookHasEffect,
   Passive as HookPassive,
+  Layout as HookLayout,
 } from "./ReactHookEffectTags";
 
 export function commitMutationEffects(finishedWork, root) {
@@ -375,6 +382,13 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
       recursivelyTraverseMutationEffects(root, finishedWork);
       // 再处理自己身上的副作用
       commitReconciliationEffects(finishedWork);
+      if (flags & Update) {
+        commitHookEffectListUnmount(
+          HookLayout | HookHasEffect,
+          finishedWork,
+          finishedWork.return
+        );
+      }
       break;
     }
     case HostComponent: {
@@ -418,4 +432,43 @@ export function commitMutationEffectsOnFiber(finishedWork, root) {
       break;
     }
   }
+}
+
+export function commitLayoutEffects(finishedWork, root) {
+  const current = finishedWork.alternate;
+  commitLayoutEffectOnFiber(root, current, finishedWork);
+}
+
+function commitLayoutEffectOnFiber(finishedRoot, current, finishedWork) {
+  const flags = finishedWork.flags;
+  switch (finishedWork.tag) {
+    case FunctionComponent: {
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+      if (flags & Update) {
+        commitHookLayoutEffects(finishedWork, HookLayout | HookHasEffect);
+      }
+      break;
+    }
+    case HostRoot: {
+      recursivelyTraverseLayoutEffects(finishedRoot, finishedWork);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+function recursivelyTraverseLayoutEffects(root, parentFiber) {
+  if (parentFiber.subtreeFlags & LayoutMask) {
+    let child = parentFiber.child;
+    while (child !== null) {
+      const current = child.alternate;
+      commitLayoutEffectOnFiber(root, current, child);
+      child = child.sibling;
+    }
+  }
+}
+
+function commitHookLayoutEffects(finishedWork, hookFlags) {
+  commitHookEffectListMount(hookFlags, finishedWork);
 }

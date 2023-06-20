@@ -15,6 +15,7 @@ import {
   commitMutationEffects,
   commitPassiveUnmountEffects, //执行destroy
   commitPassiveMountEffects, //执行create
+  commitLayoutEffects,
 } from "./ReactFiberCommitWork";
 import { finishQueueingConcurrentUpdates } from "./ReactFiberConcurrentUpdates";
 import {
@@ -50,6 +51,7 @@ function ensureRootIsScheduled(root) {
 }
 
 export function flushPassiveEffects() {
+  console.log("下一个宏任务中 flushPassiveEffects ~~~~~~~~~~~~~~~~~~~~~~~~~~");
   if (rootWithPendingPassiveEffects !== null) {
     const root = rootWithPendingPassiveEffects;
     //执行卸载副作用，destroy
@@ -88,6 +90,7 @@ function commitRoot(root) {
       scheduleCallback(flushPassiveEffects);
     }
   }
+  console.log("开始commit~~~~~~~~~~~~~~~~~~~~~~~~~~");
   // 判断子树有没有副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
@@ -95,8 +98,14 @@ function commitRoot(root) {
   // 如果自己的副作用或者子节点有副作用就进行提交DOM操作
   if (subtreeHasEffects || rootHasEffect) {
     //当DOM执行变更之后
+    console.log(
+      "DOM执行变更 commitMutationEffectsOnFiber ~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    );
     commitMutationEffectsOnFiber(finishedWork, root);
     commitMutationEffects(finishedWork, root);
+    // 执行layout Effect
+    console.log("DOM执行变更后 commitLayoutEffects ~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    commitLayoutEffects(finishedWork, root);
     root.current = finishedWork;
     if (rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = false;
@@ -115,12 +124,6 @@ function printFiber(fiber) {
   fiber.flags &= ~PerformedWork;
   */
   if (fiber.flags !== 0) {
-    console.log(
-      getFlags(fiber.flags),
-      getTag(fiber.tag),
-      typeof fiber.type === "function" ? fiber.type.name : fiber.type,
-      fiber.memoizedProps
-    );
     if (fiber.deletions) {
       for (let i = 0; i < fiber.deletions.length; i++) {
         const childToDelete = fiber.deletions[i];
@@ -239,11 +242,11 @@ function printFinishedWork(fiber) {
     child = child.sibling;
   }
   if (fiber.flags !== 0) {
-    console.log(
-      getFlags(fiber.flags),
-      getTag(fiber.tag),
-      typeof fiber.type === "function" ? fiber.type.name : fiber.type,
-      fiber.memoizedProps
-    );
+    // console.log(
+    //   getFlags(fiber.flags),
+    //   getTag(fiber.tag),
+    //   typeof fiber.type === "function" ? fiber.type.name : fiber.type,
+    //   fiber.memoizedProps
+    // );
   }
 }
