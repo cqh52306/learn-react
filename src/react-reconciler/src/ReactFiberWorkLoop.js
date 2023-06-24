@@ -1,4 +1,8 @@
-import { scheduleCallback } from "scheduler";
+import {
+  NormalPriority as NormalSchedulerPriority,
+  scheduleCallback as Scheduler_scheduleCallback,
+  shouldYield,
+} from "./Scheduler";
 import { createWorkInProgress } from "./ReactFiber";
 import { beginWork } from "./ReactFiberBeginWork";
 import { completeWork } from "./ReactFiberCompleteWork";
@@ -47,9 +51,31 @@ function ensureRootIsScheduled(root) {
   if (workInProgressRoot) return;
   workInProgressRoot = root;
   // 告诉浏览器要执行此函数 performConcurrentWorkOnRoot 在此出发更新
-  scheduleCallback(performConcurrentWorkOnRoot.bind(null, root));
+  Scheduler_scheduleCallback(
+    NormalSchedulerPriority,
+    performConcurrentWorkOnRoot.bind(null, root)
+  );
 }
 
+function renderRootConcurrent(root, lanes) {
+  if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
+    prepareFreshStack(root, lanes);
+  }
+  workLoopConcurrent();
+  if (workInProgress !== null) {
+    return RootInProgress;
+  }
+  workInProgressRoot = null;
+  workInProgressRootRenderLanes = NoLanes;
+  return workInProgressRootExitStatus;
+}
+
+function workLoopConcurrent() {
+  sleep(6);
+  //如果有下一个要构建的fiber并且时间片没有过期
+  performUnitOfWork(workInProgress);
+  console.log("shouldYield()", shouldYield(), workInProgress?.type);
+}
 export function flushPassiveEffects() {
   console.log("下一个宏任务中 flushPassiveEffects ~~~~~~~~~~~~~~~~~~~~~~~~~~");
   if (rootWithPendingPassiveEffects !== null) {
@@ -87,7 +113,7 @@ function commitRoot(root) {
   ) {
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
-      scheduleCallback(flushPassiveEffects);
+      Scheduler_scheduleCallback(NormalSchedulerPriority, flushPassiveEffects);
     }
   }
   console.log("开始commit~~~~~~~~~~~~~~~~~~~~~~~~~~");
